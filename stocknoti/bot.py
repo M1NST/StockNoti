@@ -54,7 +54,7 @@ class StockNotiBot(discord.Client):
         self.guild_id = int(os.getenv("DISCORD_GUILD_ID", "0") or 0)
         self.daily_channel_id = int(os.getenv("DISCORD_DAILY_CHANNEL_ID", "0") or 0)
         self.daily_enabled = os.getenv("STOCKNOTI_DAILY_ENABLED", "false").lower() == "true"
-        self.daily_time = os.getenv("STOCKNOTI_DAILY_TIME", "08:30")
+        self.daily_time = os.getenv("STOCKNOTI_DAILY_TIME", "08:30").replace(".", ":")
         self.timezone = ZoneInfo(os.getenv("STOCKNOTI_TIMEZONE", "Asia/Bangkok"))
         self._last_daily_key: str | None = None
 
