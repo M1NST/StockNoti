@@ -207,12 +207,21 @@ def build_score(quote: StockQuote, tech: TechnicalSnapshot, news: list[NewsItem]
 
 
 def analyze_symbol(client: MarketDataClient, symbol: str, lookback_days: int = 365) -> StockAnalysis:
+    analysis, _history = analyze_symbol_with_history(client, symbol, lookback_days=lookback_days)
+    return analysis
+
+
+def analyze_symbol_with_history(
+    client: MarketDataClient,
+    symbol: str,
+    lookback_days: int = 365,
+) -> tuple[StockAnalysis, object]:
     history = client.get_history(symbol, lookback_days=lookback_days)
     quote = client.get_quote(symbol)
     technical = build_technical_snapshot(history)
     news = client.get_news(symbol)
     score = build_score(quote, technical, news)
-    return StockAnalysis(
+    analysis = StockAnalysis(
         symbol=symbol.upper(),
         quote=quote,
         technical=technical,
@@ -220,6 +229,7 @@ def analyze_symbol(client: MarketDataClient, symbol: str, lookback_days: int = 3
         score=score,
         generated_at=datetime.now(UTC),
     )
+    return analysis, history
 
 
 def rank_watchlist(client: MarketDataClient, symbols: list[str], lookback_days: int = 365) -> list[StockAnalysis]:

@@ -102,6 +102,8 @@ python -m stocknoti bot
 - `/watchlist` ดูรายชื่อหุ้นที่ติดตาม
 - `/stock_help` ดูคำสั่งทั้งหมด
 
+คำสั่ง `/analyze` จะส่งการ์ดภาพแนวตั้งสำหรับ Discord ด้วย ภาพใช้ธีม dark mode และสรุปชื่อหุ้น, ราคาปิดล่าสุด, แนวรับ, แนวต้าน, score dashboard, technical status และ bottom line analysis โดยสร้างด้วย Pillow
+
 ถ้าเปิด `STOCKNOTI_DAILY_ENABLED=true` และใส่ `DISCORD_DAILY_CHANNEL_ID` bot จะส่งรายงานรายวันเองเวลา `STOCKNOTI_DAILY_TIME` ตาม timezone ที่ตั้งไว้
 
 ### วิธีสร้าง Discord Bot Token

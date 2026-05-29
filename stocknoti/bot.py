@@ -11,9 +11,10 @@ from discord.ext import tasks
 from dotenv import load_dotenv
 
 from stocknoti.config import load_config
+from stocknoti.cards import generate_analysis_card
 from stocknoti.data_sources import MarketDataClient
 from stocknoti.discord import make_daily_payload, make_single_payload
-from stocknoti.scoring import analyze_symbol, rank_watchlist
+from stocknoti.scoring import analyze_symbol_with_history, rank_watchlist
 
 
 def _payload_to_embeds(payload: dict) -> list[discord.Embed]:
@@ -85,14 +86,19 @@ class StockNotiBot(discord.Client):
         avoid = list(reversed(analyses[-count:]))
         return _payload_to_embeds(make_daily_payload(best, avoid))
 
-    async def build_single_embeds(self, symbol: str) -> list[discord.Embed]:
-        analysis = await asyncio.to_thread(
-            analyze_symbol,
+    async def build_single_report(self, symbol: str) -> tuple[list[discord.Embed], discord.File]:
+        analysis, history = await asyncio.to_thread(
+            analyze_symbol_with_history,
             self.market_client,
             symbol.upper(),
             self.config.lookback_days,
         )
-        return _payload_to_embeds(make_single_payload(analysis))
+        embeds = _payload_to_embeds(make_single_payload(analysis))
+        image = await asyncio.to_thread(generate_analysis_card, analysis, history)
+        filename = f"{analysis.symbol.lower()}_stocknoti.png"
+        if embeds:
+            embeds[0].set_image(url=f"attachment://{filename}")
+        return embeds, discord.File(image, filename=filename)
 
     @tasks.loop(minutes=1)
     async def daily_report_loop(self) -> None:
@@ -116,11 +122,11 @@ def register_commands(bot: StockNotiBot) -> None:
     async def analyze(interaction: discord.Interaction, symbol: str) -> None:
         await interaction.response.defer(thinking=True)
         try:
-            embeds = await bot.build_single_embeds(symbol)
+            embeds, file = await bot.build_single_report(symbol)
         except Exception as exc:
             await interaction.followup.send(f"วิเคราะห์ {symbol.upper()} ไม่สำเร็จ: {exc}", ephemeral=True)
             return
-        await interaction.followup.send(embeds=embeds)
+        await interaction.followup.send(embeds=embeds, file=file)
 
     @bot.tree.command(name="daily", description="จัดอันดับหุ้นน่าสนใจและหุ้นที่ควรรอก่อนจาก watchlist")
     @app_commands.describe(top="จำนวนอันดับที่ต้องการดู")
