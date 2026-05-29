@@ -68,6 +68,55 @@ python -m stocknoti.cli analyze ADVANC.BK --send-discord
 python -m stocknoti.cli analyze AAPL --json
 ```
 
+## ใช้งานเป็น Discord Bot
+
+โหมด bot จะใช้ slash commands ใน Discord และต้องมี process ที่เปิดค้างไว้ เช่น เครื่องตัวเอง, VPS หรือ worker hosting
+
+เพิ่มค่าใน `.env`:
+
+```env
+DISCORD_BOT_TOKEN=
+DISCORD_GUILD_ID=
+DISCORD_DAILY_CHANNEL_ID=
+STOCKNOTI_DAILY_ENABLED=false
+STOCKNOTI_DAILY_TIME=08:30
+STOCKNOTI_TIMEZONE=Asia/Bangkok
+```
+
+รัน bot:
+
+```powershell
+python -m stocknoti.bot
+```
+
+หรือใช้ผ่าน CLI:
+
+```powershell
+python -m stocknoti bot
+```
+
+คำสั่งใน Discord:
+
+- `/analyze symbol:AAPL` วิเคราะห์หุ้นรายตัว
+- `/daily top:5` จัดอันดับหุ้นจาก watchlist
+- `/watchlist` ดูรายชื่อหุ้นที่ติดตาม
+- `/stock_help` ดูคำสั่งทั้งหมด
+
+ถ้าเปิด `STOCKNOTI_DAILY_ENABLED=true` และใส่ `DISCORD_DAILY_CHANNEL_ID` bot จะส่งรายงานรายวันเองเวลา `STOCKNOTI_DAILY_TIME` ตาม timezone ที่ตั้งไว้
+
+### วิธีสร้าง Discord Bot Token
+
+1. เข้า Discord Developer Portal
+2. สร้าง Application ใหม่
+3. ไปที่แท็บ Bot แล้วกด Add Bot
+4. กด Reset Token หรือ Copy Token แล้วใส่ใน `DISCORD_BOT_TOKEN`
+5. ไปที่ OAuth2 > URL Generator
+6. เลือก scopes: `bot` และ `applications.commands`
+7. เลือก permissions: `Send Messages`, `Embed Links`, `Read Message History`
+8. เปิด URL ที่สร้าง แล้ว invite bot เข้า server
+
+ถ้าตั้ง `DISCORD_GUILD_ID` เป็น server id ของคุณ คำสั่ง slash commands จะ sync เร็วขึ้นตอนทดสอบ
+
 ## ตั้งให้รันทุกวันบน Windows
 
 ตัวอย่างให้รันทุกวันเวลา 08:30:

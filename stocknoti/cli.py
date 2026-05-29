@@ -94,6 +94,12 @@ def analyze(args) -> None:
         print("ส่งบทวิเคราะห์เข้า Discord แล้ว")
 
 
+def run_bot(args) -> None:
+    from stocknoti.bot import main as bot_main
+
+    bot_main()
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="StockNoti - ระบบแจ้งเตือนและวิเคราะห์หุ้นรายวัน")
     parser.add_argument("--config", help="path ของไฟล์ watchlist.yaml")
@@ -111,6 +117,9 @@ def build_parser() -> argparse.ArgumentParser:
     analyze_parser.add_argument("--json", action="store_true", help="แสดง Discord payload เป็น JSON")
     analyze_parser.add_argument("--send-discord", action="store_true", help="ส่งผลลัพธ์เข้า Discord webhook")
     analyze_parser.set_defaults(func=analyze)
+
+    bot_parser = subparsers.add_parser("bot", help="รัน Discord bot แบบ slash commands")
+    bot_parser.set_defaults(func=run_bot)
 
     return parser
 
