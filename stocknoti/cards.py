@@ -192,8 +192,15 @@ def _draw_metric(draw: ImageDraw.ImageDraw, box: tuple[int, int, int, int], labe
 
 
 def _score_bar(score: float) -> str:
-    filled = max(0, min(20, round(score / 5)))
-    return f"{'#' * filled}{'-' * (20 - filled)}"
+    if score >= 80:
+        return "Premium Setup"
+    if score >= 70:
+        return "Strong Watch"
+    if score >= 55:
+        return "Wait for Setup"
+    if score >= 40:
+        return "Neutral"
+    return "High Risk"
 
 
 def _recent_change(history: pd.DataFrame, days: int) -> float | None:
@@ -209,7 +216,8 @@ def _draw_score_panel(draw: ImageDraw.ImageDraw, analysis: StockAnalysis, histor
     _draw_text(draw, (86, 410), "Signal Dashboard", 30, GOLD, bold=True)
     _draw_text(draw, (86, 466), f"{score.total:.1f}", 72, WHITE, bold=True)
     _draw_text(draw, (228, 492), "/100", 28, MUTED, bold=True)
-    _draw_text(draw, (86, 558), _score_bar(score.total), 28, GOLD, bold=True)
+    draw.rounded_rectangle((86, 552, 330, 596), radius=14, fill="#1b2028", outline=GOLD, width=1)
+    _draw_text(draw, (108, 562), _score_bar(score.total), 22, GOLD, bold=True)
 
     change_5d = _recent_change(history, 5)
     change_20d = _recent_change(history, 20)

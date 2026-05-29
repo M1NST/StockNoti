@@ -33,8 +33,7 @@ def _score_label(score: float) -> str:
 
 
 def _score_bar(score: float) -> str:
-    filled = max(0, min(10, round(score / 10)))
-    return f"[{'#' * filled}{'-' * (10 - filled)}] {score:.1f}/100"
+    return f"{score:.1f}/100"
 
 
 def _money(value: float | None, currency: str = "") -> str:
@@ -77,7 +76,7 @@ def _signal_lines(analysis: StockAnalysis) -> str:
 def _score_lines(analysis: StockAnalysis) -> str:
     score = analysis.score
     return (
-        f"รวม: `{_score_bar(score.total)}`\n"
+        f"รวม: **{_score_bar(score.total)}**\n"
         f"เทคนิค: `{score.technical:.1f}` | พื้นฐาน: `{score.fundamental:.1f}` | "
         f"ข่าว: `{score.news:.1f}` | เสี่ยง: `{score.risk:.1f}`"
     )
@@ -118,7 +117,7 @@ def make_daily_payload(best: list[StockAnalysis], avoid: list[StockAnalysis]) ->
             {
                 "name": _ranking_title(index, analysis),
                 "value": (
-                    f"`{_score_bar(analysis.score.total)}`\n"
+                    f"คะแนนรวม: **{_score_bar(analysis.score.total)}**\n"
                     f"{_signal_lines(analysis)}\n"
                     f"เหตุผลหลัก:\n{_line_reasons(analysis.score.reasons[:3])}"
                 ),
@@ -137,7 +136,7 @@ def make_daily_payload(best: list[StockAnalysis], avoid: list[StockAnalysis]) ->
             {
                 "name": _ranking_title(index, analysis),
                 "value": (
-                    f"`{_score_bar(analysis.score.total)}`\n"
+                    f"คะแนนรวม: **{_score_bar(analysis.score.total)}**\n"
                     f"{_signal_lines(analysis)}\n"
                     f"สิ่งที่ต้องระวัง:\n{_line_reasons(analysis.score.warnings[:3])}"
                 ),
@@ -159,7 +158,7 @@ def make_single_payload(analysis: StockAnalysis) -> dict:
         "title": f"{analysis.symbol} | {quote.name}",
         "description": (
             f"สถานะ: **{analysis.recommendation}**\n"
-            f"คะแนนรวม: `{_score_bar(analysis.score.total)}`\n"
+            f"คะแนนรวม: **{_score_bar(analysis.score.total)}**\n"
             f"ภาพรวม: **{_score_label(analysis.score.total)}**"
         ),
         "color": color,
