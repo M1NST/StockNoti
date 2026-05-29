@@ -1,0 +1,145 @@
+from __future__ import annotations
+
+from datetime import datetime
+
+import requests
+
+from stocknoti.models import StockAnalysis
+
+
+BUY_COLOR = 0x31C48D
+WATCH_COLOR = 0xF6AD55
+AVOID_COLOR = 0xF05252
+
+
+def _money(value: float | None, currency: str = "") -> str:
+    if value is None:
+        return "ไม่ทราบ"
+    suffix = f" {currency}" if currency else ""
+    return f"{value:,.2f}{suffix}"
+
+
+def _compact_money(value: float | None, currency: str = "") -> str:
+    if value is None:
+        return "ไม่ทราบ"
+    abs_value = abs(value)
+    if abs_value >= 1_000_000_000:
+        text = f"{value / 1_000_000_000:,.2f}B"
+    elif abs_value >= 1_000_000:
+        text = f"{value / 1_000_000:,.2f}M"
+    else:
+        text = f"{value:,.2f}"
+    return f"{text} {currency}".strip()
+
+
+def _line_reasons(items: list[str]) -> str:
+    if not items:
+        return "ยังไม่มีสัญญาณเด่น"
+    return "\n".join(f"• {item}" for item in items[:4])
+
+
+def make_daily_payload(best: list[StockAnalysis], avoid: list[StockAnalysis]) -> dict:
+    today = datetime.now().strftime("%d/%m/%Y")
+    embeds = [
+        {
+            "title": f"รายงานหุ้นรายวัน {today}",
+            "description": "สรุปจากราคา, กราฟเทคนิค, งบการเงิน, ข่าว และความเสี่ยง เหมาะสำหรับใช้เป็นไอเดียก่อนทำการบ้านต่อ",
+            "color": BUY_COLOR,
+            "fields": [],
+            "footer": {"text": "StockNoti • ไม่ใช่คำแนะนำการลงทุนโดยตรง"},
+        }
+    ]
+
+    for index, analysis in enumerate(best, start=1):
+        embeds[0]["fields"].append(
+            {
+                "name": f"{index}. {analysis.symbol} • {analysis.recommendation} • {analysis.score.total}/100",
+                "value": (
+                    f"ราคา: {_money(analysis.quote.price, analysis.quote.currency)}\n"
+                    f"แนวรับ: {_money(analysis.technical.support, analysis.quote.currency)} | "
+                    f"แนวต้าน: {_money(analysis.technical.resistance, analysis.quote.currency)}\n"
+                    f"เหตุผลหลัก:\n{_line_reasons(analysis.score.reasons[:3])}"
+                ),
+                "inline": False,
+            }
+        )
+
+    avoid_embed = {
+        "title": "5 อันดับที่ควรเลี่ยง/รอก่อน",
+        "description": "คะแนนต่ำกว่าเพื่อนใน watchlist เพราะสัญญาณรวมยังไม่สวย หรือความเสี่ยงยังเยอะ",
+        "color": AVOID_COLOR,
+        "fields": [],
+    }
+    for index, analysis in enumerate(avoid, start=1):
+        avoid_embed["fields"].append(
+            {
+                "name": f"{index}. {analysis.symbol} • {analysis.recommendation} • {analysis.score.total}/100",
+                "value": (
+                    f"ราคา: {_money(analysis.quote.price, analysis.quote.currency)}\n"
+                    f"สิ่งที่ต้องระวัง:\n{_line_reasons(analysis.score.warnings[:3])}"
+                ),
+                "inline": False,
+            }
+        )
+    embeds.append(avoid_embed)
+
+    return {"username": "StockNoti", "embeds": embeds}
+
+
+def make_single_payload(analysis: StockAnalysis) -> dict:
+    color = BUY_COLOR if analysis.score.total >= 70 else WATCH_COLOR if analysis.score.total >= 45 else AVOID_COLOR
+    tech = analysis.technical
+    quote = analysis.quote
+    rsi_line = f"RSI: {tech.rsi14:.1f}" if tech.rsi14 is not None else "RSI: ไม่ทราบ"
+    news_lines = []
+    for item in analysis.news[:3]:
+        link = f" ([อ่านต่อ]({item.url}))" if item.url else ""
+        news_lines.append(f"• {item.title} - {item.source}{link}")
+
+    embed = {
+        "title": f"{analysis.symbol} • {quote.name}",
+        "description": f"บทสรุป: **{analysis.recommendation}** ด้วยคะแนนรวม **{analysis.score.total}/100**",
+        "color": color,
+        "fields": [
+            {
+                "name": "ราคาและกราฟ",
+                "value": (
+                    f"ราคา: {_money(quote.price, quote.currency)}\n"
+                    f"Trend: {tech.trend}\n"
+                    f"แนวรับ: {_money(tech.support, quote.currency)}\n"
+                    f"แนวต้าน: {_money(tech.resistance, quote.currency)}\n"
+                    f"{rsi_line}"
+                ),
+                "inline": False,
+            },
+            {
+                "name": "คะแนนย่อย",
+                "value": (
+                    f"เทคนิค {analysis.score.technical}/100 | "
+                    f"พื้นฐาน {analysis.score.fundamental}/100 | "
+                    f"ข่าว {analysis.score.news}/100 | "
+                    f"ความเสี่ยง {analysis.score.risk}/100"
+                ),
+                "inline": False,
+            },
+            {
+                "name": "งบไตรมาสล่าสุด",
+                "value": (
+                    f"วันที่งบ: {quote.latest_quarter_date or 'ไม่ทราบ'}\n"
+                    f"รายได้: {_compact_money(quote.latest_quarter_revenue, quote.currency)}\n"
+                    f"กำไรสุทธิ: {_compact_money(quote.latest_quarter_net_income, quote.currency)}"
+                ),
+                "inline": False,
+            },
+            {"name": "เหตุผลที่น่าสนใจ", "value": _line_reasons(analysis.score.reasons), "inline": False},
+            {"name": "จุดที่ต้องระวัง", "value": _line_reasons(analysis.score.warnings), "inline": False},
+            {"name": "ข่าวล่าสุด", "value": "\n".join(news_lines) if news_lines else "ยังไม่มีข่าวล่าสุด", "inline": False},
+        ],
+        "footer": {"text": "ใช้เป็นข้อมูลประกอบเท่านั้น ควรกำหนดแผนและจุดตัดขาดทุนเองเสมอ"},
+    }
+    return {"username": "StockNoti", "embeds": [embed]}
+
+
+def send_discord(webhook_url: str, payload: dict) -> None:
+    response = requests.post(webhook_url, json=payload, timeout=15)
+    response.raise_for_status()

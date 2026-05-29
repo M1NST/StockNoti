@@ -1,0 +1,20 @@
+currency: USD
+lookback_days: 365
+top_n: 5
+
+watchlist:
+  - AAPL
+  - MSFT
+  - NVDA
+  - AMZN
+  - GOOGL
+  - META
+  - TSLA
+  - AMD
+  - JPM
+  - UNH
+  - V
+  - MA
+  - COST
+  - AVGO
+  - LLY

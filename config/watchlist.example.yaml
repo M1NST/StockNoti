@@ -1,0 +1,41 @@
+# Copy this file to config/watchlist.yaml and edit the symbols you care about.
+#
+# Notes:
+# - US examples use normal tickers such as AAPL, MSFT, NVDA.
+# - Thai SET symbols on Yahoo Finance usually need ".BK", for example ADVANC.BK.
+# - Keep the list focused. Free data sources can rate-limit if the list is very large.
+
+currency: USD
+lookback_days: 365
+top_n: 5
+
+watchlist:
+  - AAPL
+  - MSFT
+  - NVDA
+  - AMZN
+  - GOOGL
+  - META
+  - TSLA
+  - AMD
+  - JPM
+  - UNH
+  - V
+  - MA
+  - COST
+  - AVGO
+  - LLY
+
+# Example Thai watchlist:
+# currency: THB
+# watchlist:
+#   - ADVANC.BK
+#   - AOT.BK
+#   - BDMS.BK
+#   - CPALL.BK
+#   - DELTA.BK
+#   - GULF.BK
+#   - PTT.BK
+#   - PTTEP.BK
+#   - SCB.BK
+#   - KBANK.BK
